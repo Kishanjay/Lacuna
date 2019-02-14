@@ -29,7 +29,7 @@ if(!fs.existsSync(html_file))
 
 
 
-let scripts = webpage_tools.get_scripts( html_file, html_path );
+let scripts = webpage_tools.get_scripts( html_file );
 
 
 let functions = [];

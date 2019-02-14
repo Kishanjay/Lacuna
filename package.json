@@ -1,7 +1,10 @@
 {
   "devDependencies": {
-	"command-line-args": "4.*",
+    "command-line-args": "4.*",
     "esprima": "3.*",
-	"cheerio": "0.22.*"
+    "cheerio": "0.22.*"
+  },
+  "dependencies": {
+    "fs-extra": "^7.0.1"
   }
 }

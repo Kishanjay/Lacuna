@@ -78,7 +78,6 @@ _<directory>_ is the directory the application analyzes (mandatory); this should
 | --entire     | -e    | Output disconnected nodes in graph (only with --graph).  |                     |
 | --noremove   | -n    | Don't remove uncalled nodes.                             |                     |
 | --timeout    | -t    | Pass a timeout value to algorithms (not enforced).       |                     |
-| --pace       | -p    | Display when an algorithm starts running.                |                     |
 | --missteps   | -m    | When set, display algorithm errors.                      |                     |
 
 

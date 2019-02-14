@@ -19,18 +19,15 @@ const Graph = require('./graph'),
 const CONSTRUCTED_EDGE = {name: 'constructed', value: 0x01};
 
 
-function get_available_analyzers(folder)
-{
+function get_available_analyzers(folder) {
 	let available_instances = [],
 	    files = file_system.readdirSync(folder);
 
-	for(let i = 0; i < files.length; i++)
-	{
+	for(let i = 0; i < files.length; i++) {
 		let file = files[i],
 		    split = file.split('.');
 
-		if(split.pop() == 'js')
-		{
+		if(split.pop() == 'js') {
 			available_instances.push( split.join('.') );
 		}
 	}
@@ -39,32 +36,35 @@ function get_available_analyzers(folder)
 }
 
 
-function get_analyzer_data(filter)
-{
+/**
+ * @return functions: the analyzers.run functions of each chosen analyser
+ * fingerprints: id's of analysers ?
+ * 
+ * @param {*} filter string array of analyzers
+ */
+function get_analyzer_data(filter) {
 	const folder = path.join(__dirname, '/analyzers');
 
 	let fingerprints = [];
-	let id = CONSTRUCTED_EDGE.value;	// first value.
+	let id = CONSTRUCTED_EDGE.value; // == 1
 
 	fingerprints.push(CONSTRUCTED_EDGE);
 
 	let analyzers = [],
 	    available_analyzers = get_available_analyzers(folder);
 
-	filter.forEach(function(name)
-	{
-		if( available_analyzers.indexOf( name ) != -1 )
-		{
+	filter.forEach(function(name) {
+		if( available_analyzers.includes( name )) {
 			let require_name = path.join(folder, name);
 
 			let analyzer = require(require_name);
 			let instance = new analyzer();
 
-			id *= 2;	// Flip the next higher bit (0001 -> 0010 -> 0100 -> 1000, etc.).
+			id *= 2;	// Flip the next higher bit (0001 -> 0010 -> 0100 -> 1000, etc.). // Why so C-ish niels
 			fingerprints.push({name: name, value: id});
 
 			analyzers.push( instance.run );
-		}else{
+		} else {
 			console.log('Note: analyzer \'' + name + '\' not found in analyzers/');
 		}
 	});
@@ -174,14 +174,12 @@ function remove_nested_functions(functions)
 
 module.exports =
 {
-	run: function(settings, callback)
-	{
+	run: function(settings, callback) {
 		// Keep a timer, so we know how long the tool took to run.
 		let start_time = process.hrtime();
 
 		// Save statistics, so we can return them to our caller later.
-		let stats = 
-		{
+		let stats = {
 			js_files: 0,
 			function_count: 0,
 			functions_removed: 0,
@@ -190,71 +188,61 @@ module.exports =
 			error: ''
 		};
 
-
-		// Retrieve all scripts in this page (ordered based on execution order).
-		let scripts = webpage_tools.get_scripts( settings.html_path, settings.directory );
-
+		// get all scripts including their functions (ordered by slowest first)
+		let scripts = webpage_tools.get_scripts( settings.html_path);
 		stats.js_files = scripts.length;
 
 		// Create a graph with each function as a node, plus the base caller node.
 		// Connect them all together from the start, using the CONSTRUCTED_EDGE type.
+		// results in a fully connected graph where nodes are functions.
 		let nodes = GraphTools.build_function_graph(scripts, CONSTRUCTED_EDGE.value);
 
 		// The number of functions is the number of nodes in the graph, minus one for the base caller node.
 		stats.function_count = nodes.length - 1;
 
 		// Get a list of readily prepared analyzer functions (but only those in the settings.analyzer list) and their fingerprints.
+		// Contains the run function of each analyser.
 		let analyzers = get_analyzer_data(settings.analyzer);
 
 		// Build the correct settings object for the analyzers.
-		let analyzer_settings =
-		{
-			directory: settings.directory,
-			html_path: settings.html_path,
-			html_file: path.basename(settings.html_path),
-			scripts: scripts,
-			nodes: nodes,
-			base_node: GraphTools.get_base_caller_node(nodes),
-			fingerprints: analyzers.fingerprints,
+		// TODO: Which data do the analysers use? and what do they require?
+		let analyzer_settings = {
+			directory: settings.directory, // directory
+			html_path: settings.html_path, // complete path + filename
+			html_file: path.basename(settings.html_path), // filename
+			scripts: scripts, // all scripts 
+			nodes: nodes, // all nodes of the graph
+			base_node: GraphTools.get_base_caller_node(nodes), // ?
+			fingerprints: analyzers.fingerprints, // id's of the analyzers
 			timeout: settings.timeout,
-			pace: settings.pace,
-			error_handler: function(name, message)
-			{
-				if(settings.missteps)
-				{
+			error_handler: function(name, message) {
+				if(settings.missteps) {
 					console.error('Analyzer \'' + name + '\' encountered an error:', message);
 				}
 			}
 		};
 
-		if(analyzers.functions.length > 0)
-		{
+		if(analyzers.functions.length > 0) {
 			// Run each analyzer in turn, letting it edit the graph (mark edges).
-			async_loop(analyzers.functions, analyzer_settings, function(analyzer_run_info)
-			{
-				stats.analyzer_info = analyzer_run_info.reduce(function(acc, current)
-				{
+			async_loop(analyzers.functions, analyzer_settings, function(analyzer_run_info) {
+				stats.analyzer_info = analyzer_run_info.reduce(function(acc, current) {
 					acc.push( current[0] + ': ' + current[1] );
 					return acc;
 				}, []).join(';');
-
 				// Once we are done with analyzing the source, start processing the marked graph.
 				process_marked_graph();
 			});
-		}else{
+		} else {
 			// If there are no analyzers set, just process the graph.
 			// This is useful for e.g. call graph image generation.
 			process_marked_graph();
 		}
 
 
-		function process_marked_graph()
-		{
+		function process_marked_graph() {
 			// Once we're done with all the analyzers, remove any edge that was constructed.
-			if(!settings.noremove)
-			{
+			if(!settings.noremove) {
 				nodes = GraphTools.remove_constructed_edges(nodes, CONSTRUCTED_EDGE.value);
-
 
 				let disconnected_nodes = GraphTools.get_disconnected_nodes(nodes);
 
@@ -264,17 +252,15 @@ module.exports =
 				// The number of removed functions equals the number of nodes without any incoming edges (a disconnected node).
 				// The base caller node is never disconnected, so don't subtract from this.
 				stats.functions_removed = disconnected_nodes.length;
-			}else{
+			} else {
 				stats.functions_removed = 0;
 			}
 
-			if(settings.graph)
-			{
+			if(settings.graph) {
 				// Return the graph image too.
-				if(settings.show_disconnected)
-				{
+				if(settings.show_disconnected) {
 					stats.graph = GraphTools.output_function_graph(nodes, analyzers.fingerprints);
-				}else{
+				} else {
 					// Only show reachable nodes.
 					stats.graph = GraphTools.output_function_graph(GraphTools.get_connected_nodes(nodes), analyzers.fingerprints);
 				}
@@ -283,10 +269,7 @@ module.exports =
 			return_results();
 		}
 
-
-
-		function return_results()
-		{
+		function return_results() {
 			// Calculate run time and save it in the stats object.
 			let end_time = process.hrtime(start_time);
 			stats.run_time = parseInt(   ((end_time[0] * 1e9 + end_time[1]) * 1e-6).toFixed(0),  10);

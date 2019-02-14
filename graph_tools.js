@@ -29,33 +29,26 @@ let base_caller_node = new Graph.Node(
 
 
 
-function build_function_graph(scripts, constructed_edge_value)
-{
+function build_function_graph(scripts, constructed_edge_value) {
 	let nodes = [];
 
 	// Create nodes for every function in every file.
-	scripts.forEach(function(script)
-	{
-		script.functions.forEach(function(func)
-		{
-			let value =
-			{
+	scripts.forEach(function(script) {
+		script.functions.forEach(function(func) {
+			let value = {
 				script_name: script.file,
 				data: func,
 
-				equals: function(other)
-				{
+				equals: function(other) {
 					// ID is per file/inline, start and end locations can't overlap in a single file.
 					return this.script_name == other.script_name && this.data.start == other.data.start && this.data.end == other.data.end;
 				},
 
-				toString: function()
-				{
+				toString: function() {
 					let name = script.file;
 					let name_parts = [name, '@', this.data.start, '-', this.data.end, ' ', this.data.type];
 
-					if(this.data.type == 'declaration')
-					{
+					if(this.data.type == 'declaration') {
 						name_parts.push(':');
 						name_parts.push(this.data.name);
 					}
@@ -74,13 +67,11 @@ function build_function_graph(scripts, constructed_edge_value)
 	// Also connect to yourself (i.e. for recursive functions).
 	let i, j;
 
-	for(i = 0; i < nodes.length; i++)
-	{
+	for(i = 0; i < nodes.length; i++) {
 		// Base caller -> this node.
 		base_caller_node.connect( nodes[i], constructed_edge_value );
 
-		for(j = 0; j < nodes.length; j++)
-		{
+		for(j = 0; j < nodes.length; j++) {
 			nodes[i].connect(nodes[j], constructed_edge_value);
 		}
 	}
@@ -92,27 +83,21 @@ function build_function_graph(scripts, constructed_edge_value)
 }
 
 
-function get_base_caller_node(nodes)
-{
-	for(let i = 0; i < nodes.length; i++)
-	{
-		if( nodes[i].equals(base_caller_node) )
-		{
+function get_base_caller_node(nodes) {
+	for(let i = 0; i < nodes.length; i++) {
+		if( nodes[i].equals(base_caller_node) ) {
 			return nodes[i];
 		}
 	}
 };
 
 
-function edge_name(value, fingerprints)
-{
+function edge_name(value, fingerprints) {
 	let i,
 	    names = [];
 
-	for(i = 0; i < fingerprints.length; i++)
-	{
-		if(value & fingerprints[i].value)
-		{
+	for(i = 0; i < fingerprints.length; i++) {
+		if(value & fingerprints[i].value) {
 			names.push( fingerprints[i].name );
 		}
 	}
@@ -121,10 +106,8 @@ function edge_name(value, fingerprints)
 }
 
 
-function get_percentage_color(count, max)
-{
-	let color_ranges =
-	[
+function get_percentage_color(count, max) {
+	let color_ranges = [
 		{ percent: 0.0, color: { red: 0xff, green: 0x00, blue: 0x00 } },
 		{ percent: 0.5, color: { red: 0xff, green: 0xff, blue: 0x00 } },
 		{ percent: 1.0, color: { red: 0x00, green: 0xff, blue: 0x00 } }
@@ -133,10 +116,8 @@ function get_percentage_color(count, max)
 	let color_index = 0,
 	    percent = count / max;
 
-	for(let i = 1; i <= color_ranges.length - 1; i++)
-	{
-		if(percent <= color_ranges[i].percent)
-		{
+	for(let i = 1; i <= color_ranges.length - 1; i++) {
+		if(percent <= color_ranges[i].percent) {
 			color_index = i;
 			break;
 		}
@@ -151,15 +132,13 @@ function get_percentage_color(count, max)
 	let percent_lower = 1 - range_percent,
 	    percent_upper = range_percent;
 
-	let color =
-	{
+	let color = {
 		red:	Math.floor(lower.color.red * percent_lower + upper.color.red * percent_upper),
 		green:	Math.floor(lower.color.green * percent_lower + upper.color.green * percent_upper),
 		blue:	Math.floor(lower.color.blue * percent_lower + upper.color.blue * percent_upper)
 	};
 
-	let hex =
-	[
+	let hex = [
 		('0' + color.red.toString(16)).slice(-2),
 		('0' + color.green.toString(16)).slice(-2),
 		('0' + color.blue.toString(16)).slice(-2)
