@@ -6,3 +6,4 @@ output.png
 !analyzers/static/javascript-call-graph/node_modules
 !analyzers/nativecalls/javascript-call-graph/node_modules
 
+DEV_README.md

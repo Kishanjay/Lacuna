@@ -27,7 +27,7 @@ try {
 		{ name: 'missteps', type: Boolean, alias: 'm' },
 
 		/* 0: passive (doesn't modify source), 1: lazy-loading, 2: emptying, 3: removing all together */
-		{ name: 'level', type: Number, alias: 'o' }, // optimization level
+		{ name: 'olevel', type: Number, alias: 'o' }, // optimization level
 
 		/* Preserve original */
 		{ name: 'preserve', type: Boolean, alias: 'p' }, // makes a copy of the working dir before starting
@@ -124,7 +124,8 @@ try {
 		graph: settings.graph,
 		show_disconnected: settings.entire,
 		timeout: settings.timeout,
-		missteps: settings.missteps
+		missteps: settings.missteps,
+		level: settings.olevel
 	}, function (results) {
 		/* callback functions containing the statistics */
 			

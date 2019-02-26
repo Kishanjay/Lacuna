@@ -2,6 +2,6 @@ function sayHello() {
     console.log("Hello there my dear friend.");
 }
 
-var hi = function(){}
+var hi = null
 
 sayHello();

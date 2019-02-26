@@ -79,6 +79,7 @@ _<directory>_ is the directory the application analyzes (mandatory); this should
 | --noremove   | -n    | Don't remove uncalled nodes.                             |                     |
 | --timeout    | -t    | Pass a timeout value to algorithms (not enforced).       |                     |
 | --missteps   | -m    | When set, display algorithm errors.                      |                     |
+| --preserve   | -p    | Preserve code by copying dir before applying lacuna.     |                     |
 
 
 #### CSV export
